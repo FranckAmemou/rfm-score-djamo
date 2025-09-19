@@ -1,25 +1,38 @@
 # ===========================================
 # Extraction des données RFM 90 jours - Djamo Fintech
 # ===========================================
-
+# data_extraction.py
 import pandas as pd
 from google.cloud import bigquery
-import yaml
+from google.oauth2 import service_account
 import os
 
-def load_config():
-    """Charge la configuration depuis le fichier YAML"""
-    config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'parameters.yaml')
-    with open(config_path, 'r') as file:
-        return yaml.safe_load(file)
+# 1. Configuration des credentials
+credentials_path = "C:\\credentials\\service_account.json"
+
+# Vérification que le fichier existe
+if not os.path.exists(credentials_path):
+    raise FileNotFoundError(f"❌ Fichier de credentials introuvable: {credentials_path}")
+
+# Chargement des credentials
+credentials = service_account.Credentials.from_service_account_file(
+    credentials_path,
+    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+
+# 2. Initialisation du client BigQuery
+client = bigquery.Client(
+    credentials=credentials,
+    project=credentials.project_id  # Utilise le project_id défini dans le JSON
+)
 
 def extract_rfm_data():
     """
-    Extrait les données RFM depuis BigQuery
+    Extrait les données RFM depuis BigQuery et retourne le DataFrame
     """
-    config = load_config()
+    print("✅ Connexion à BigQuery établie avec succès!")
     
-    query = f"""
+    query = """
     WITH snapshot_date_cte AS (
         SELECT DATE('2025-08-30') AS snapshot_date
     ),
@@ -162,26 +175,16 @@ def extract_rfm_data():
     ORDER BY txn_count_90d DESC
     """
 
-    # Exécution de la requête
-    client = bigquery.Client(project='djamo-data')
+    # Exécution de la requête avec le client déjà configuré
+    print("⏳ Extraction des données RFM depuis BigQuery...")
     df_rfm_90d = client.query(query).to_dataframe()
-    print(f"Données extraites: {df_rfm_90d.shape}")
+    print(f"✅ Données extraites: {df_rfm_90d.shape[0]} lignes, {df_rfm_90d.shape[1]} colonnes")
     
     return df_rfm_90d
 
-def save_data(df, filename="rfm_data.csv"):
-    """
-    Sauvegarde les données extraites
-    """
-    processed_dir = os.path.join(os.path.dirname(__file__), '..', 'data', 'processed')
-    os.makedirs(processed_dir, exist_ok=True)
-    
-    filepath = os.path.join(processed_dir, filename)
-    df.to_csv(filepath, index=False)
-    print(f"Données sauvegardées: {filepath}")
-
 if __name__ == "__main__":
+    # Mode standalone: extrait et affiche les infos
     df = extract_rfm_data()
-    print(f"Données extraites: {df.shape}")
-    save_data(df)
+    print(f"\n Aperçu des données:")
     print(df.head())
+    print(f"\n Extraction terminée! DataFrame retourné.")
