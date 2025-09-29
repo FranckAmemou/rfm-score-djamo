@@ -1,26 +1,18 @@
-# Données
-data/raw/
-data/processed/*.csv
-data/outputs/
-
-# Environnements virtuels
+# Virtual environment
 venv/
-env/
+.env
 
-# Fichiers Python
-__pycache__/
-*.pyc
-
-# Jupyter
+# Jupyter checkpoints
 .ipynb_checkpoints/
 
-# IDE
-.vscode/
-.idea/
+# Données locales
+data/raw/
+data/processed/
 
-# OS
-.DS_Store
-Thumbs.db
+# Credentials
+*.json
 
-# Logs
 *.log
+
+__pycache__/
+*.pyc
